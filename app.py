@@ -117,7 +117,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-    "https://sales-chatbot-ui.vercel.app/",
+    "https://sales-chatbot-ui.vercel.app",
     "http://localhost:3000",
     ],
     allow_credentials=True,
