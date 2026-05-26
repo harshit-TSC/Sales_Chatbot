@@ -129,6 +129,7 @@ TONE:
 # FASTAPI APP
 # =============================================================================
 
+app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
