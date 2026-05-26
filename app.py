@@ -66,15 +66,31 @@ print("GROQ_API_KEY  :", "✅" if GROQ_API_KEY   else "❌ MISSING")
 print("GEMINI_API_KEY:", "✅" if GEMINI_API_KEY  else "❌ MISSING")
 
 pc           = Pinecone(api_key=PINECONE_API_KEY)
-index        = pc.Index(PINECONE_INDEX)
+_pinecone_index = None
+def get_index():
+    global _pinecone_index
+    if _pinecone_index is None:
+        print(f"[Pinecone] Connecting to index '{PINECONE_INDEX}'...")
+        _pinecone_index = pc.Index(PINECONE_INDEX)
+        print("[Pinecone] ✅ Connected")
+    return _pinecone_index
+
+
 groq_client  = Groq(api_key=GROQ_API_KEY)
 genai_client = genai.Client(api_key=GEMINI_API_KEY)
 
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-deepseek_client    = OpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=OPENROUTER_API_KEY,
-)
+_deepseek_client   = None
+def get_deepseek_client():
+    global _deepseek_client
+    if _deepseek_client is None:
+        if not OPENROUTER_API_KEY:
+            raise RuntimeError("OPENROUTER_API_KEY is not set")
+        _deepseek_client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=OPENROUTER_API_KEY,
+        )
+    return _deepseek_client
 
 TAVILY_SYSTEM_PROMPT = """You are SalesAssist, an internal assistant for The Sleep Company's sales representatives.
 You have been given live web search results from thesleepcompany.in to answer the query.
@@ -113,12 +129,13 @@ TONE:
 # FASTAPI APP
 # =============================================================================
 
-app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-    "https://sales-chatbot-ui.vercel.app",
-    "http://localhost:3000",
+        "https://sales-chatbot-ui.vercel.app",
+        "https://sales-chatbot-ui-git-main-harshit-tscs-projects.vercel.app",
+        "https://sales-chatbot-dhh5o9cwb-harshit-tscs-projects.vercel.app",
+        "http://localhost:3000",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -613,7 +630,7 @@ def retrieve_from_db(
     elif doc_category == "live":
         pinecone_filter = {"doc_category": {"$eq": "product"}}
 
-    results = index.query(
+    results = get_index().query(
         vector=embedding,
         top_k=top_k,
         include_metadata=True,
@@ -623,7 +640,7 @@ def retrieve_from_db(
 
     if len(matches) < 2 and pinecone_filter:
         print(f"[Retrieval] Filter too narrow — falling back to unfiltered")
-        results = index.query(vector=embedding, top_k=top_k, include_metadata=True)
+        results = get_index().query(vector=embedding, top_k=top_k, include_metadata=True)
         matches = results.get("matches", [])
 
     valid = []
@@ -1561,7 +1578,7 @@ async def admin_ingest(file: UploadFile = File(...), employee_id: str = Form(...
         # 3. Delete existing vectors for this file from Pinecone
         print(f"[Ingest] Deleting existing vectors for: {file.filename}")
         try:
-            index.delete(filter={"source": {"$eq": file.filename}})
+            get_index().delete(filter={"source": {"$eq": file.filename}})
             print(f"[Ingest] ✅ Old vectors deleted")
             replaced_previous = True
         except Exception as e:
