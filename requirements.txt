@@ -1,0 +1,36 @@
+# numpy
+# fastapi
+# uvicorn
+# groq
+# sqlalchemy
+# python-dotenv
+# requests
+# pinecone
+psycopg2-binary
+tavily-python
+
+# Core frameworks
+fastapi
+uvicorn
+pydantic
+sqlalchemy
+beautifulsoup4
+
+# AI / LLM clients
+groq
+# anthropic                  # ← Remove or comment this out (no longer needed)
+google-genai>=1.73.0          # ← New: Official Google GenAI SDK for Gemini
+openai
+
+# Vector DB & Embeddings
+pinecone
+requests
+
+# Others
+python-dotenv
+python-multipart              # if using forms
+
+#Ingest
+python-docx
+pdfplumber
+python-pptx
